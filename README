@@ -1,0 +1,70 @@
+# cdktf-apply
+
+[![MIT License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
+Multi-mode GitHub Action for [CDK for Terraform (CDKTF)](https://developer.hashicorp.com/terraform/cdktf) workflows: **plan**, **validate**, and **apply**.
+
+## Features
+
+- Run `plan`, `validate`, or `apply` modes for CDKTF projects
+- Supports custom working directories and environments
+- Handles Terraform and Node.js setup automatically
+- Outputs drift detection and apply results
+
+## Usage
+
+Add the action to your workflow:
+
+```yaml
+- name: CDKTF Apply
+  uses: snapsheet/cdktf-apply@v1
+  with:
+    github_token: ${{ secrets.GITHUB_TOKEN }}
+    mode: plan # or validate | apply
+    working_directory: ./cdktf
+    environment: release
+    terraform_version: 1.8.0 # optional
+    ref: main
+```
+
+### Inputs
+
+| Name                | Required | Description                                        |
+| ------------------- | -------- | -------------------------------------------------- |
+| `github_token`      | Yes      | Token for GitHub authentication                    |
+| `github_pat`        | Yes      | GitHub Personal Access Token (packages:read scope) |
+| `mode`              | Yes      | Which step to run: `plan`, `validate`, or `apply`  |
+| `working_directory` | Yes      | Path to your CDKTF project directory               |
+| `terraform_version` | No       | Terraform version (default: `1.8.0`)               |
+| `ref`               | Yes      | Git ref to apply                                   |
+| `environment`       | Yes      | The environment to deploy to                       |
+
+### Outputs
+
+| Name             | Description                               |
+| ---------------- | ----------------------------------------- |
+| `drift_detected` | Whether drift was detected (plan mode)    |
+| `no_changes`     | Whether there were no changes (plan mode) |
+
+## Project Structure
+
+- [`src/`](src/) — TypeScript source code for action logic
+- [`action.yml`](action.yml) — Action metadata and workflow definition
+- [`test/`](test/) — Unit tests
+
+## Development
+
+1. Install dependencies:
+   ```sh
+   npm ci
+   ```
+2. Build the project:
+   ```sh
+   npm run build
+   ```
+3. Run tests:
+   ```sh
+   npm test
+   ```
+
+## License
