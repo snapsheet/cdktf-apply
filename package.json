@@ -5,7 +5,7 @@
   "description": "GitHub Action for CDKTF plan/validate/apply with approval and diff normalization.",
   "main": "dist/index.js",
   "scripts": {
-    "build": "esbuild src/index.ts --bundle --platform=node --target=node20 --outdir=dist",
+    "build": "esbuild src/index.ts --bundle --platform=node --target=node24 --outdir=dist",
     "clean": "rm -rf dist",
     "test": "jest",
     "test:watch": "jest --watch",

@@ -42,7 +42,7 @@ runs:
         terraform_version: ${{ inputs.terraform_version }}
 
     - name: Setup Node
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
         node-version-file: ${{ inputs.working_directory }}/.nvmrc
 
