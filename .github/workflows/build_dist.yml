@@ -2,7 +2,7 @@ name: Build and Commit dist
 
 on:
   push:
-    branches: ["**"]
+    branches: ["main"]
 
 jobs:
   build:
