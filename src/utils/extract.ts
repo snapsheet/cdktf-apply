@@ -15,29 +15,35 @@ export function extractResourceChanges(plan: any): {
   before: Record<string, any>;
 }[] {
   const changes: ResourceChange[] = plan.resource_changes || [];
-  return changes
-    .filter((rc) => rc.change?.actions?.[0] !== "no-op")
-    .map((rc) => {
-      const before = rc.change?.before || {};
-      const after = rc.change?.after || {};
-      const changedFields = Object.keys({ ...before, ...after }).filter(
-        (key) => JSON.stringify(before[key]) !== JSON.stringify(after[key])
-      );
-      const filteredBefore: Record<string, any> = {};
-      const filteredAfter: Record<string, any> = {};
-      changedFields.forEach((key) => {
-        filteredBefore[key] = before[key];
-        filteredAfter[key] = after[key];
-      });
-      return {
-        address: rc.address,
-        actions: rc.change?.actions,
-        before: filteredBefore,
-        after: filteredAfter,
-      };
-    })
-    .filter(
-      (rc) =>
-        Object.keys(rc.after).length > 0 || Object.keys(rc.before).length > 0
-    );
+  return (
+    changes
+      // Only include changes that are not no-op
+      .filter((rc) => rc.change?.actions?.[0] !== "no-op")
+      .map((rc) => {
+        const before = rc.change?.before || {};
+        const after = rc.change?.after || {};
+        const changedFields = Object.keys({ ...before, ...after }).filter(
+          (key) => JSON.stringify(before[key]) !== JSON.stringify(after[key])
+        );
+        const filteredBefore: Record<string, any> = {};
+        const filteredAfter: Record<string, any> = {};
+
+        // Pull out changed fields
+        changedFields.forEach((key) => {
+          filteredBefore[key] = before[key];
+          filteredAfter[key] = after[key];
+        });
+        return {
+          address: rc.address,
+          actions: rc.change?.actions,
+          before: filteredBefore,
+          after: filteredAfter,
+        };
+      })
+      // Filter to only changes with actual before/after differences
+      .filter(
+        (rc) =>
+          Object.keys(rc.after).length > 0 || Object.keys(rc.before).length > 0
+      )
+  );
 }
