@@ -7,27 +7,40 @@ import { extractResourceChanges } from "../utils/extract";
 import { generateMarkdownDiff } from "../utils/diff";
 import * as path from "path";
 
+/**
+ * Executes the Terraform validate step for the given inputs.
+ *
+ * - Runs `terraform plan` in the specified working directory and stack.
+ * - Loads the previous plan and compares it to the current plan to detect infrastructure drift.
+ * - Normalizes and extracts resource changes from both plans.
+ * - Generates a markdown diff and writes it to a file and the GitHub Actions summary.
+ *
+ * @param inputs - The inputs required to perform the validate operation, including working directory and stack name.
+ * @returns The result of the validate operation, including drift detection status and plan comparison result.
+ */
 export async function executeValidate(
   inputs: ApplyInputs
 ): Promise<ValidateResult> {
-
   // Run new plan
-  const { planJson: newPlanRaw, result } = await runTerraformPlan(inputs.workingDirectory, inputs.stackName);
+  const { planJson: newPlanRaw, result } = await runTerraformPlan(
+    inputs.workingDirectory,
+    inputs.stackName
+  );
 
   await core.summary
     .addHeading("🤔 Pre-Apply Terraform Plan")
     .addRaw(
       result.success
-      ? "✅ Terraform plan completed successfully!\n\n"
-      : "❌ Terraform plan failed! See error:\n\n" ,
-    true
+        ? "✅ Terraform plan completed successfully!\n\n"
+        : "❌ Terraform plan failed! See error:\n\n",
+      true
     )
     .addRaw(
       `<details><summary>Show Terraform Plan Output</summary>\n\n` +
-      "```text\n" +
-      (result.output || "No output available.") +
-      "\n```\n" +
-      `</details>`,
+        "```text\n" +
+        (result.output || "No output available.") +
+        "\n```\n" +
+        `</details>`,
       true
     )
     .addBreak()
@@ -37,8 +50,13 @@ export async function executeValidate(
     return { result };
   }
 
-  const stackDir = path.join(inputs.workingDirectory,"cdktf.out","stacks",inputs.stackName);
-  
+  const stackDir = path.join(
+    inputs.workingDirectory,
+    "cdktf.out",
+    "stacks",
+    inputs.stackName
+  );
+
   // Load previous plan JSON
   const oldPlanPath = path.join(stackDir, "previous", "plan.json");
 
@@ -50,11 +68,19 @@ export async function executeValidate(
 
     if (!oldPlanRaw || oldPlanRaw.trim().length === 0) {
       core.error(`Previous plan JSON at ${oldPlanPath} is empty.`);
-      return {result: {success: false, error: "Previous plan JSON is empty"}};
+      return {
+        result: { success: false, error: "Previous plan JSON is empty" },
+      };
     }
   } catch (err) {
-    core.error(`Failed to read previous plan JSON from ${oldPlanPath}: ${(err as Error).message}`);
-    return {result: {success: false, error: "Could not read previous plan JSON"}};
+    core.error(
+      `Failed to read previous plan JSON from ${oldPlanPath}: ${
+        (err as Error).message
+      }`
+    );
+    return {
+      result: { success: false, error: "Could not read previous plan JSON" },
+    };
   }
 
   core.info("Normalizing plans...");
@@ -70,8 +96,8 @@ export async function executeValidate(
   core.info("Comparing resource changes...");
   // Compare plans
   const plansMatch = JSON.stringify(oldChanges) === JSON.stringify(newChanges);
-  
-  core.info('Generating diff...');
+
+  core.info("Generating diff...");
   // Build markdown diff
   const diffResult = generateMarkdownDiff(oldChanges, newChanges);
 
@@ -80,16 +106,20 @@ export async function executeValidate(
   core.info(diffResult.diffMarkdown || "No changes detected");
 
   // Write diff as markdown file
-  fs.writeFileSync(path.join(stackDir, "plan_diff.md"), diffResult.diffMarkdown || "No changes detected");
+  fs.writeFileSync(
+    path.join(stackDir, "plan_diff.md"),
+    diffResult.diffMarkdown || "No changes detected"
+  );
 
   // Add markdown to the GitHub Step Summary panel
   await core.summary
     .addHeading("Terraform Plan Diff - Current Plan vs Initial Plan")
     .addRaw(
-    plansMatch && !diffResult.driftDetected
-      ? "✅ Initial plan and current plan match! No infrastructure drift detected!\n\n"
-      : "❌ Initial plan and current plan differ! Infrastructure drift detected!\n\n" + diffResult.diffMarkdown,
-    true
+      plansMatch && !diffResult.driftDetected
+        ? "✅ Initial plan and current plan match! No infrastructure drift detected!\n\n"
+        : "❌ Initial plan and current plan differ! Infrastructure drift detected!\n\n" +
+            diffResult.diffMarkdown,
+      true
     )
     .addBreak()
     .write();

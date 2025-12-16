@@ -1,12 +1,12 @@
-import { executeApply } from '../../src/modes/apply';
-import * as terraform from '../../src/utils/terraform';
-import * as core from '@actions/core';
-import { ApplyInputs } from '../../src/types';
+import { executeApply } from "../../src/modes/apply";
+import * as terraform from "../../src/utils/terraform";
+import * as core from "@actions/core";
+import { ApplyInputs } from "../../src/types";
 
-jest.mock('../../src/utils/terraform');
-jest.mock('@actions/core');
+jest.mock("../../src/utils/terraform");
+jest.mock("@actions/core");
 
-describe('executeApply', () => {
+describe("executeApply", () => {
   const mockSummary = {
     addHeading: jest.fn().mockReturnThis(),
     addRaw: jest.fn().mockReturnThis(),
@@ -15,12 +15,12 @@ describe('executeApply', () => {
   };
 
   const baseInputs: ApplyInputs = {
-    mode: 'apply',
-    ref: 'main',
-    workingDirectory: '.',
-    previousPlanJson: '',
-    environment: 'test',
-    stackName: 'test-stack',
+    mode: "apply",
+    ref: "main",
+    workingDirectory: ".",
+    previousPlanJson: "",
+    environment: "test",
+    stackName: "test-stack",
   };
 
   beforeAll(() => {
@@ -31,9 +31,9 @@ describe('executeApply', () => {
     jest.clearAllMocks();
   });
 
-  it('writes a success summary and returns result', async () => {
+  it("writes a success summary and returns result", async () => {
     (terraform.runTerraformApply as jest.Mock).mockResolvedValue({
-      result: { success: true, output: 'apply stdout logs' }
+      result: { success: true, output: "apply stdout logs" },
     });
 
     const result = await executeApply(baseInputs);
@@ -45,17 +45,24 @@ describe('executeApply', () => {
     );
 
     expect(mockSummary.addRaw).toHaveBeenCalledWith(
-      expect.stringContaining('apply stdout logs'),
+      expect.stringContaining("apply stdout logs"),
       true
     );
 
     expect(mockSummary.write).toHaveBeenCalled();
-    expect(result).toEqual({ result: { success: true, output: 'apply stdout logs' } });
+    expect(result).toEqual({
+      result: { success: true, output: "apply stdout logs" },
+    });
   });
 
-  it('writes a failure summary and returns result', async () => {
+  it("writes a failure summary and returns result", async () => {
     (terraform.runTerraformApply as jest.Mock).mockResolvedValue({
-      result: { success: false, output: 'apply stderr logs', error: "Terraform apply failed with exit code 1. See apply.stderr.log for details." }
+      result: {
+        success: false,
+        output: "apply stderr logs",
+        error:
+          "Terraform apply failed with exit code 1. See apply.stderr.log for details.",
+      },
     });
 
     const result = await executeApply(baseInputs);
@@ -66,10 +73,17 @@ describe('executeApply', () => {
     );
 
     expect(mockSummary.addRaw).toHaveBeenCalledWith(
-      expect.stringContaining('apply stderr logs'),
+      expect.stringContaining("apply stderr logs"),
       true
     );
     expect(mockSummary.write).toHaveBeenCalled();
-    expect(result).toEqual({ result: { success: false, output: 'apply stderr logs', error: "Terraform apply failed with exit code 1. See apply.stderr.log for details." } });
+    expect(result).toEqual({
+      result: {
+        success: false,
+        output: "apply stderr logs",
+        error:
+          "Terraform apply failed with exit code 1. See apply.stderr.log for details.",
+      },
+    });
   });
 });

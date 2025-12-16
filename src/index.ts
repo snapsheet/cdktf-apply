@@ -4,12 +4,19 @@ import { executePlan } from "./modes/plan";
 import { executeValidate } from "./modes/validate";
 import { executeApply } from "./modes/apply";
 
+/**
+ * Retrieves and validates inputs from the GitHub Actions context/environment.
+ * Throws an error if required inputs are missing.
+ *
+ * @returns {ApplyInputs} The structured inputs for the action.
+ */
 function getInputs(): ApplyInputs {
-
   const stack = process.env.STACK_NAME;
 
   if (!stack || stack.trim() === "") {
-    throw new Error("STACK_NAME environment variable is required but was not provided.");
+    throw new Error(
+      "STACK_NAME environment variable is required but was not provided."
+    );
   }
 
   return {
@@ -17,10 +24,15 @@ function getInputs(): ApplyInputs {
     ref: core.getInput("ref"),
     workingDirectory: core.getInput("working_directory", { required: true }),
     environment: core.getInput("environment", { required: true }),
-    stackName: stack
+    stackName: stack,
   };
 }
 
+/**
+ * Main entry point for the GitHub Action.
+ * Determines the mode (plan, validate, apply) and executes the corresponding workflow.
+ * Sets outputs and marks the workflow as failed if errors occur.
+ */
 async function run(): Promise<void> {
   try {
     const inputs = getInputs();
@@ -30,18 +42,18 @@ async function run(): Promise<void> {
     core.info(`📁 Working directory: ${inputs.workingDirectory}`);
 
     if (inputs.mode === "plan") {
-      const {result, noChanges} = await executePlan(inputs);
-      
+      const { result, noChanges } = await executePlan(inputs);
+
       if (result.success === false) {
         core.setFailed(result.error || "Terraform plan failed.");
         return;
       }
-      core.setOutput("no_changes", noChanges === true ? 'true' : 'false');
+      core.setOutput("no_changes", noChanges === true ? "true" : "false");
       return;
     }
 
     if (inputs.mode === "validate") {
-      const {result, driftDetected} = await executeValidate(inputs);
+      const { result, driftDetected } = await executeValidate(inputs);
 
       if (result?.success === false) {
         core.setFailed(result.error || "Detecting plan drift failed.");
@@ -51,17 +63,19 @@ async function run(): Promise<void> {
       core.setOutput("drift_detected", driftDetected?.toString());
 
       if (driftDetected === true) {
-        core.setFailed("Terraform plans do NOT match. See the plan diff artifact for details.");
+        core.setFailed(
+          "Terraform plans do NOT match. See the plan diff artifact for details."
+        );
       }
       return;
     }
 
     if (inputs.mode === "apply") {
-      const {result} = await executeApply(inputs);
+      const { result } = await executeApply(inputs);
 
       if (result.success === false) {
         core.setFailed(result.error || "Terraform apply failed.");
-        return
+        return;
       }
       return;
     }
