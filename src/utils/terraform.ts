@@ -19,7 +19,7 @@ export async function synthApp(workingDir: string): Promise<Result> {
 
   return {
     success: exitCode === 0,
-    output: exitCode === 0 ? "CDKTF synth'd successfully." : undefined,
+    output: exitCode === 0 ? "CDKTF synth ran successfully" : undefined,
     error:
       exitCode !== 0
         ? `CDKTF synth failed with exit code ${exitCode}.`
@@ -74,9 +74,10 @@ export async function runTerraformPlan(
   let planStderr = "";
 
   // Generate plan file
+  // Use -detailed-exitcode to get proper exit code: 0 = no changes, 1 = error, 2 = changes detected
   const exitCode = await exec.exec(
     "terraform",
-    ["plan", "-out=plan.tfplan", "-no-color"],
+    ["plan", "-out=plan.tfplan", "-no-color", "-detailed-exitcode"],
     {
       cwd: stackDir,
       ignoreReturnCode: true,
@@ -91,28 +92,22 @@ export async function runTerraformPlan(
   fs.writeFileSync(path.join(stackDir, "plan.stdout.log"), planStdout);
   fs.writeFileSync(path.join(stackDir, "plan.stderr.log"), planStderr);
 
-  if (exitCode !== 0) {
-    return {
-      planJson: "",
-      result: {
-        success: false,
-        output: planStderr,
-        error: `Terraform plan failed with exit code ${exitCode}. See plan.stderr.log for details.`,
-      },
-    };
-  }
-
-  if (
-    planStdout.includes(
-      "No changes. Your infrastructure matches the configuration."
-    )
-  ) {
+  if (exitCode === 0) {
     return {
       planJson: "",
       noChanges: true,
       result: {
         success: true,
         output: "✅ No changes detected in Terraform plan. Canceling job.",
+      },
+    };
+  } else if (exitCode === 1) {
+    return {
+      planJson: "",
+      result: {
+        success: false,
+        output: planStderr,
+        error: `Terraform plan failed with exit code ${exitCode}. See plan.stderr.log for details.`,
       },
     };
   }
