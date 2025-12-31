@@ -1,0 +1,65 @@
+name: "cdktf-apply"
+description: "Multi-mode CDKTF action: plan, validate, apply."
+
+inputs:
+  github_token:
+    required: true
+    description: "Token for GitHub authentication"
+
+  mode:
+    description: "Which step to run: plan | validate | apply"
+    required: true
+
+  working_directory:
+    required: true
+    description: "Path to CDKTF directory"
+
+  terraform_version:
+    required: false
+    default: "1.8.0"
+    description: "Terraform version"
+
+  ref:
+    required: true
+    description: "Git ref to apply"
+
+  environment:
+    required: true
+    description: The environment to deploy to
+
+outputs:
+  drift_detected:
+    value: ${{ steps.run.outputs.drift_detected }}
+  no_changes:
+    value: ${{ steps.run.outputs.no_changes }}
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: ${{ inputs.terraform_version }}
+
+    - name: Setup Node
+      uses: actions/setup-node@v6
+      with:
+        node-version-file: ${{ inputs.working_directory }}/.nvmrc
+
+    - name: Install Dependencies
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      run: npm ci
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+
+    - name: Execute CDKTF Apply Action (mode = ${{ inputs.mode }})
+      id: run
+      shell: bash
+      env:
+        INPUT_MODE: ${{ inputs.mode }}
+        INPUT_WORKING_DIRECTORY: ${{ inputs.working_directory }}
+        INPUT_ENVIRONMENT: ${{ inputs.environment }}
+        STACK_NAME: ${{ github.event.repository.name }}-${{ inputs.environment }}
+      run: |
+        node ${{ github.action_path }}/dist/index.js
