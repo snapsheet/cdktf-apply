@@ -19853,7 +19853,7 @@ async function runTerraformPlan(working_directory, stack_name) {
   let planStderr = "";
   const exitCode = await exec.exec(
     "terraform",
-    ["plan", "-out=plan.tfplan", "-no-color", "-detailed-exitcode"],
+    ["plan", "-out=plan.tfplan", "-no-color"],
     {
       cwd: stackDir,
       ignoreReturnCode: true,
@@ -19865,22 +19865,25 @@ async function runTerraformPlan(working_directory, stack_name) {
   );
   fs.writeFileSync(path.join(stackDir, "plan.stdout.log"), planStdout);
   fs.writeFileSync(path.join(stackDir, "plan.stderr.log"), planStderr);
-  if (exitCode === 0) {
-    return {
-      planJson: "",
-      noChanges: true,
-      result: {
-        success: true,
-        output: "\u2705 No changes detected in Terraform plan. Canceling job."
-      }
-    };
-  } else if (exitCode === 1) {
+  if (exitCode !== 0) {
     return {
       planJson: "",
       result: {
         success: false,
         output: planStderr,
         error: `Terraform plan failed with exit code ${exitCode}. See plan.stderr.log for details.`
+      }
+    };
+  }
+  if (planStdout.includes(
+    "No changes. Your infrastructure matches the configuration."
+  )) {
+    return {
+      planJson: "",
+      noChanges: true,
+      result: {
+        success: true,
+        output: "\u2705 No changes detected in Terraform plan. Canceling job."
       }
     };
   }
