@@ -23,23 +23,15 @@ const defaultMocks = () => {
 
 const mockSteps = (
   failStep?: string,
-  opts?: {
-    stdout?: string;
-    stderr?: string;
-    exitCode?: number;
-    planExitCode?: number;
-  }
+  opts?: { stdout?: string; stderr?: string }
 ) => {
   (exec.exec as jest.Mock).mockImplementation((cmd, args, execOpts) => {
-    // Send stdout to terraform show (for JSON) and apply (for output), but not to plan
     if (
       execOpts &&
       execOpts.listeners &&
       opts &&
       typeof execOpts.listeners.stdout === "function" &&
-      opts.stdout &&
-      cmd === "terraform" &&
-      (args[0] === "show" || args[0] === "apply")
+      opts.stdout
     ) {
       execOpts.listeners.stdout(Buffer.from(opts.stdout));
     }
@@ -53,19 +45,12 @@ const mockSteps = (
       execOpts.listeners.stderr(Buffer.from(opts.stderr));
     }
     if (cmd === "terraform" && args[0] === failStep) {
-      return opts?.exitCode ?? 1;
+      return 1;
     } else if (
       cmd === "npx" &&
       (args[0] === failStep || args[1] === failStep)
     ) {
       return 1;
-      // Need this additional check, in order to handle the case where the plan exit code is 2 (changes detected)
-    } else if (
-      cmd === "terraform" &&
-      args[0] === "plan" &&
-      opts?.planExitCode !== undefined
-    ) {
-      return opts.planExitCode;
     } else {
       return 0;
     }
@@ -85,6 +70,7 @@ describe("terraform utils", () => {
       expect(result).toEqual({
         success: true,
         output: "CDKTF synth ran successfully",
+        error: undefined,
       });
     });
 
@@ -131,20 +117,17 @@ describe("terraform utils", () => {
       expect(result.planJson).toBe("");
     });
 
-    it("returns noChanges if plan exit code is 0", async () => {
-      mockSteps("plan", {
-        exitCode: 0,
+    it("returns noChanges if plan output says no changes", async () => {
+      mockSteps("", {
+        stdout: "No changes. Your infrastructure matches the configuration.",
       });
       const result = await terraform.runTerraformPlan("/cdktf", "stack");
       expect(result.noChanges).toBe(true);
       expect(result.result.success).toBe(true);
-      expect(result.result.output).toContain("No changes detected");
     });
 
     it("returns error if terraform show fails", async () => {
-      mockSteps("show", {
-        planExitCode: 2, // Exit code 2 = changes detected, so it continues to show step
-      });
+      mockSteps("show");
       const result = await terraform.runTerraformPlan("/cdktf", "stack");
       expect(result.result.success).toBe(false);
       expect(result.planJson).toBe("");
@@ -152,10 +135,7 @@ describe("terraform utils", () => {
     });
 
     it("returns planJson and success if all ok", async () => {
-      mockSteps("", {
-        planExitCode: 2, // Exit code 2 = changes detected (success)
-        stdout: '{"foo":"bar"}',
-      });
+      mockSteps("", { stdout: '{"foo":"bar"}' });
       const result = await terraform.runTerraformPlan("/cdktf", "stack");
       expect(result.result.success).toBe(true);
       expect(result.planJson).toContain('"foo":"bar"');
