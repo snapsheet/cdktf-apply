@@ -20,6 +20,7 @@ Add the action to your workflow:
   uses: snapsheet/cdktf-apply@v1
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
+    package_token: ${{ secrets.GITHUB_TOKEN }} # or ${{ secrets.NPM_TOKEN }} for npm packages
     mode: plan # or validate | apply
     working_directory: ./cdktf
     environment: release
@@ -29,15 +30,15 @@ Add the action to your workflow:
 
 ### Inputs
 
-| Name                | Required | Description                                        |
-| ------------------- | -------- | -------------------------------------------------- |
-| `github_token`      | Yes      | Token for GitHub authentication                    |
-| `github_pat`        | Yes      | GitHub Personal Access Token (packages:read scope) |
-| `mode`              | Yes      | Which step to run: `plan`, `validate`, or `apply`  |
-| `working_directory` | Yes      | Path to your CDKTF project directory               |
-| `terraform_version` | No       | Terraform version (default: `1.8.0`)               |
-| `ref`               | Yes      | Git ref to apply                                   |
-| `environment`       | Yes      | The environment to deploy to                       |
+| Name                | Required | Description                                                                                             |
+| ------------------- | -------- | ------------------------------------------------------------------------------------------------------- |
+| `github_token`      | Yes      | Token for GitHub API authentication (used for writing to GitHub Actions summary)                        |
+| `package_token`     | Yes      | Token for package authentication (use `GITHUB_TOKEN` for GitHub Packages, `NPM_TOKEN` for npm registry) |
+| `mode`              | Yes      | Which step to run: `plan`, `validate`, or `apply`                                                       |
+| `working_directory` | Yes      | Path to your CDKTF project directory                                                                    |
+| `terraform_version` | No       | Terraform version (default: `1.8.0`)                                                                    |
+| `ref`               | Yes      | Git ref to apply                                                                                        |
+| `environment`       | Yes      | The environment to deploy to                                                                            |
 
 ### Outputs
 
