@@ -6,6 +6,10 @@ inputs:
     required: true
     description: "Token for GitHub authentication"
 
+  package_token:
+    required: true
+    description: "Token for package authentication"
+
   mode:
     description: "Which step to run: plan | validate | apply"
     required: true
@@ -50,13 +54,15 @@ runs:
       shell: bash
       working-directory: ${{ inputs.working_directory }}
       run: npm ci
-      env:
-        GITHUB_TOKEN: ${{ inputs.github_token }}
+      env: # Set both tokens in order to support both GitHub Packages and npm registry
+        NPM_TOKEN: ${{ inputs.package_token }}
+        GITHUB_TOKEN: ${{ inputs.package_token }}
 
     - name: Execute CDKTF Apply Action (mode = ${{ inputs.mode }})
       id: run
       shell: bash
       env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
         INPUT_MODE: ${{ inputs.mode }}
         INPUT_WORKING_DIRECTORY: ${{ inputs.working_directory }}
         INPUT_ENVIRONMENT: ${{ inputs.environment }}
