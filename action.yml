@@ -54,8 +54,9 @@ runs:
       shell: bash
       working-directory: ${{ inputs.working_directory }}
       run: npm ci
-      env:
+      env: # Set both tokens in order to support both GitHub Packages and npm registry
         NPM_TOKEN: ${{ inputs.package_token }}
+        GITHUB_TOKEN: ${{ inputs.package_token }}
 
     - name: Execute CDKTF Apply Action (mode = ${{ inputs.mode }})
       id: run
