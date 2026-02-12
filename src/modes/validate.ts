@@ -2,7 +2,7 @@ import * as core from "@actions/core";
 import * as fs from "fs";
 import { ApplyInputs, ValidateResult } from "../types";
 import { runTerraformPlan } from "../utils/terraform";
-import { normalizePlan } from "../utils/normalize";
+import { normalizePlan, normalizeForComparison } from "../utils/normalize";
 import { extractResourceChanges } from "../utils/extract";
 import { generateMarkdownDiff } from "../utils/diff";
 import * as path from "path";
@@ -84,18 +84,18 @@ export async function executeValidate(
   }
 
   core.info("Normalizing plans...");
-  // Normalize both plans
+  // Normalize once per plan (canonical key order + JSON-in-string); extract/diff then use plain stringify
   const newNormalized = normalizePlan(newPlanRaw);
   const oldNormalized = normalizePlan(oldPlanRaw);
 
   core.info("Extracting resource changes...");
-  // Extract meaningful changes
   const oldChanges = extractResourceChanges(oldNormalized);
   const newChanges = extractResourceChanges(newNormalized);
 
   core.info("Comparing resource changes...");
-  // Compare plans
-  const plansMatch = JSON.stringify(oldChanges) === JSON.stringify(newChanges);
+  // Order-insensitive comparison of change arrays (resource list order may differ between plans)
+  const plansMatch =
+    normalizeForComparison(oldChanges) === normalizeForComparison(newChanges);
 
   core.info("Generating diff...");
   // Build markdown diff

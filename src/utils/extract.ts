@@ -4,6 +4,7 @@ import { ResourceChange } from "../types";
  * Extracts resource changes from a normalized Terraform plan object.
  * - Filters out no-op (no-operation) changes.
  * - Returns only fields that have changed between before and after states.
+ * - Expects plan to be normalized (normalizePlan) so key order is already canonical; plain stringify is sufficient.
  *
  * @param plan - The normalized Terraform plan object.
  * @returns An array of resource changes with address, actions, and changed before/after fields.

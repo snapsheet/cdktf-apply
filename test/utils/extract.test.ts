@@ -107,8 +107,18 @@ describe('extractResourceChanges', () => {
     expect(result).toEqual([]);
   });
 
-   it('handles empty or missing resource_changes', () => {
+  it('handles empty or missing resource_changes', () => {
     expect(extractResourceChanges({ resource_changes: [] })).toEqual([]);
     expect(extractResourceChanges({})).toEqual([]);
+  });
+
+  it('handles resource with missing change object', () => {
+    const plan = {
+      resource_changes: [
+        { address: 'aws_s3_bucket.orphan' }
+      ]
+    };
+    const result = extractResourceChanges(plan);
+    expect(result).toEqual([]);
   });
 });
