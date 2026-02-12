@@ -86,6 +86,15 @@ describe('normalizePlan', () => {
     expect(typeof result.defs).toBe('string');
     expect(JSON.parse(result.defs)).toEqual([{ a: 1, z: 3 }, { m: 2 }]);
   });
+
+  it('produces same normalized string for JSON array with same elements in different order', () => {
+    const plan1 = JSON.stringify({ values: '[1,2,3,45,6,7]' });
+    const plan2 = JSON.stringify({ values: '[7,6,45,3,1,2]' });
+    const norm1 = normalizePlan(plan1);
+    const norm2 = normalizePlan(plan2);
+    expect(norm1.values).toBe(norm2.values);
+    expect(JSON.parse(norm1.values)).toEqual([1, 2, 3, 45, 6, 7]);
+  });
 });
 
 describe('normalizeForComparison', () => {
@@ -112,6 +121,12 @@ describe('normalizeForComparison', () => {
   it('treats arrays with same elements in different order as equal', () => {
     const a = [{ address: 'b', x: 1 }, { address: 'a', x: 2 }];
     const b = [{ address: 'a', x: 2 }, { address: 'b', x: 1 }];
+    expect(normalizeForComparison(a)).toBe(normalizeForComparison(b));
+  });
+
+  it('treats JSON array strings with same elements in different order as equal', () => {
+    const a = '[1,2,3,45,6,7]';
+    const b = '[7,6,45,3,1,2]';
     expect(normalizeForComparison(a)).toBe(normalizeForComparison(b));
   });
 
