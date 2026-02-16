@@ -1,4 +1,5 @@
 import { generateMarkdownDiff } from '../../src/utils/diff';
+import { normalizePlan } from '../../src/utils/normalize';
 import { FlatTerraformResourceChange } from '../../src/types';
 
 describe('generateMarkdownDiff', () => {
@@ -69,5 +70,32 @@ describe('generateMarkdownDiff', () => {
     expect(result.diffMarkdown).toContain('## 🗑️ Removed (0)');
     expect(result.diffMarkdown).toContain('## ✏️ Updated (0)');
     expect(result.diffMarkdown).toContain('_None_');
+  });
+
+  it('shows no drift when plans only differed by JSON key order (normalizePlan canonicalizes before diff)', () => {
+    const containerDefs1 =
+      '[{"logConfiguration":{"options":{"awslogs-group":"snapsheet_ai","awslogs-region":"us-east-1"}}}]';
+    const containerDefs2 =
+      '[{"logConfiguration":{"options":{"awslogs-region":"us-east-1","awslogs-group":"snapsheet_ai"}}}]';
+    const canonical = JSON.stringify(normalizePlan(containerDefs1));
+    expect(canonical).toBe(JSON.stringify(normalizePlan(containerDefs2)));
+    const oldChanges: FlatTerraformResourceChange[] = [
+      {
+        address: 'aws_ecs_task_definition.example',
+        before: {},
+        after: { container_definitions: canonical },
+        actions: ['create']
+      }
+    ];
+    const newChanges: FlatTerraformResourceChange[] = [
+      {
+        address: 'aws_ecs_task_definition.example',
+        before: {},
+        after: { container_definitions: canonical },
+        actions: ['create']
+      }
+    ];
+    const result = generateMarkdownDiff(oldChanges, newChanges);
+    expect(result.driftDetected).toBe(false);
   });
 });

@@ -27,9 +27,13 @@ inputs:
     required: true
     description: "Git ref to apply"
 
+  stack_name:
+    required: true
+    description: "The stack to deploy"
+
   environment:
     required: true
-    description: The environment to deploy to
+    description: "The environment to deploy to"
 
 outputs:
   drift_detected:
@@ -66,6 +70,6 @@ runs:
         INPUT_MODE: ${{ inputs.mode }}
         INPUT_WORKING_DIRECTORY: ${{ inputs.working_directory }}
         INPUT_ENVIRONMENT: ${{ inputs.environment }}
-        STACK_NAME: ${{ github.event.repository.name }}-${{ inputs.environment }}
+        STACK_NAME: ${{ inputs.stack_name }} # Synthesis has additional non-env stacks, so we need to pass it in as an input
       run: |
         node ${{ github.action_path }}/dist/index.js

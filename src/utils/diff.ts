@@ -4,6 +4,7 @@ import { FlatTerraformResourceChange } from "../types.js";
  * Generates a markdown-formatted diff between two sets of Terraform resource changes.
  * - Identifies added, removed, and updated resources.
  * - Marks drift detection if any differences are found.
+ * - Expects changes from normalized plans so before/after are already canonical; plain stringify is sufficient.
  *
  * @param oldChanges - The resource changes from the previous plan.
  * @param newChanges - The resource changes from the current plan.
